@@ -86,23 +86,28 @@ create procedure verPedidoModificado()
 begin
 declare temp date;
 declare variable int;
-declare cursor1 cursor for
-select p.fecped from pedido p;
+declare fallo bool;
+declare cursor1 cursor for select p.fecped from pedido p;
+declare continue handler for not found set fallo=1;
+set fallo=0;
 open cursor1;
 loop1: loop
 fetch cursor1 into temp;
-set variable = datediff(() - temp);
+set variable = (datediff(now(), temp))/365;
 if  variable > 0 and variable < 2 then 
-select 'vigente';
+select variable as 'vigente';
 end if;
 if variable < 4 and variable > 2 then
-select 'antiguo';
+select variable as 'antiguo';
 end if;
 if variable >= 5 then 
-select 'muy antiguo';
+select variable as 'muy antiguo';
+end if;
+if fallo=1 then leave loop1;
 end if;
 end loop loop1;
 close cursor1;
+select 'Hola';
 end; //
 
 delimiter ;
