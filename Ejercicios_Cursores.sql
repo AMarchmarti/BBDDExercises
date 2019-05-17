@@ -47,7 +47,46 @@ INSERT lineapedido VALUES ('P0004', 'A0012', 15);
 INSERT lineapedido VALUES ('P0004', 'A0043', 5); 
 INSERT lineapedido VALUES ('P0004', 'A0089', 50);
 
-    
+CREATE DATABASE empresa;
+USE empresa;
+
+CREATE TABLE depart(
+	dept_no	INT(3) UNSIGNED PRIMARY KEY,
+	dnombre VARCHAR(40) UNIQUE NOT NULL,
+	loc		VARCHAR (40) NOT NULL
+);
+
+CREATE TABLE emple(
+	emp_no	INT(4) UNSIGNED PRIMARY KEY,
+	apellido VARCHAR(40) NOT NULL,
+	oficio	ENUM ('EMPLEADO', 'VENDEDOR', 'DIRECTOR', 'ANALISTA', 'PROGRAMADOR', 'PRESIDENTE') NOT NULL,
+	dir 	INT(4) UNSIGNED,
+	fecha_alt	DATE NOT NULL,
+	salario FLOAT(7,2) UNSIGNED NOT NULL,
+	comision FLOAT(7,2) UNSIGNED,
+	dept_no INT(3) UNSIGNED DEFAULT 10 NOT NULL,
+	INDEX (dir),
+	FOREIGN KEY(dir) REFERENCES emple(emp_no) ON UPDATE CASCADE,
+	INDEX(dept_no),
+	FOREIGN KEY(dept_no) REFERENCES depart(dept_no) ON UPDATE CASCADE
+);
+
+INSERT INTO depart VALUES (10,'CONTABILIDAD', 'SEVILLA');
+INSERT INTO depart VALUES (20,'INVESTIGACIÓN', 'MADRID');
+INSERT INTO depart VALUES (30,'VENTAS', 'BARCELONA');
+
+INSERT INTO emple VALUES (7839,'REY', 'PRESIDENTE', NULL, '2010/11/17', 3900, 0, 10);
+INSERT INTO emple VALUES (7698,'NEGRO', 'DIRECTOR', 7839, '2010/05/01', 2200, 0, 30);
+INSERT INTO emple VALUES (7738,'CEREZO', 'DIRECTOR', 7839, '2010/09/06', 2210, 0, 10);
+INSERT INTO emple VALUES (7566,'JIMÉNEZ', 'DIRECTOR', 7839, '2010/02/04', 2300, 0, 20);
+INSERT INTO emple VALUES (7499,'ARROYO', 'VENDEDOR', 7698, '2009/02/20', 1200, 240, 30);
+INSERT INTO emple VALUES (7521,'SALA', 'VENDEDOR', 7698, '2010/02/22', 960, 390, 30);
+INSERT INTO emple VALUES (7654,'MARTÍN', 'VENDEDOR', 7698, '2010/09/29', 965, 1000, 30);
+INSERT INTO emple VALUES (7844,'TOVAR', 'VENDEDOR', 7698, '2010/09/08', 1100, 0, 30);
+INSERT INTO emple VALUES (7900,'JIMENO', 'EMPLEADO', 7698, '2010/12/03', 725, 0, 30);
+INSERT INTO emple VALUES (7369,'SÁNCHEZ', 'EMPLEADO', 7900, '2012/12/12', 600, 0, 20);
+INSERT INTO emple VALUES (7788,'GIL', 'ANALISTA', 7566, '2013/04/23', 2350, 0, 20);
+INSERT INTO emple VALUES (7876,'ALONSO', 'EMPLEADO', 7788, '2013/08/09', 860, 0, 20);
     
     
 -- 1. Crea un procedimiento llamado verPedido, que muestre sólo una fila de la tabla pedido,
@@ -214,12 +253,7 @@ call insertar('P0006', now()); -- Éste va a dar error.
 /*7. Crea un procedimiento que reciba como parámetro el código de un artículo y nos muestre su
 descripción en caso de existir. En caso de que no exista ningún artículo con dicho código, se
 mostrará un mensaje como el siguiente: “No existe ningún artículo con el código XXXXX”.
-Ejercicios sobre la base de datos creaBD_empresa.sql:
-Esquema relacional de la base de datos empresa:
-DEPART (dept_no, dnombre, loc)
-EMPLE (emp_no, apellido, oficio, dir, fecha_alt, salario, comision, dept_no)
-Clave ajenas: dir → EMPLE (emp_no)
-dept_no → DEPART (dept_no)*/
+*/
 delimiter //
 drop procedure if exists mostrarDescripcion //
 create procedure mostrarDescripcion(codigo varchar(20))
@@ -269,7 +303,33 @@ Ejemplos de salida:
 +----------------------------------------------------------+
 | No existe ningún empleado apellidado CCCCC |
 +----------------------------- -------------------------------+*/
--- delimiter //
--- drop procedure if exists crearJefe //
--- create procedure crearJefe()
+
+select e.apellido, e.oficio
+from emple e
+where e.dept_no = 30 ;
+
+
+
+delimiter //
+drop procedure if exists cambiarJefe //
+create procedure cambiarJefe(apellidoAntiguo varchar(50), apellidoNuevo varchar(50))
+modifies sql data
+begin
+	declare falloNoExisteJefeAntiguo bool;
+    declare falloNoExisteJefeNuevo bool;
+
+    update emple set oficio = 'EMPLEADO' where emple.apellido = apellidoAntiguo;
+    
+    update emple set oficio = 'DIRECTOR' where emple.apellido = apellidoNuevo;
+
+	select concat('El nuevo jefe de ', apellidoAntiguo, ' es ', apellidoNuevo);
+end//
+
+delimiter ;
+call cambiarJefe('Hola', 'Adios');
+    
+    
+   
+
+
  
