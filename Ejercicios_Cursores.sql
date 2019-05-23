@@ -1,4 +1,4 @@
-DROP SCHEMA ejerciciocursores;
+-- DROP SCHEMA ejerciciocursores;
 
 DROP DATABASE pedidos;
 
@@ -304,29 +304,52 @@ Ejemplos de salida:
 | No existe ningún empleado apellidado CCCCC |
 +----------------------------- -------------------------------+*/
 
-select e.apellido, e.oficio
-from emple e
-where e.dept_no = 30 ;
-
-
-
 delimiter //
 drop procedure if exists cambiarJefe //
-create procedure cambiarJefe(apellidoAntiguo varchar(50), apellidoNuevo varchar(50))
+create procedure cambiarJefe(apellidoEmpleado varchar(20), apellidoJefeACambiar varchar(20))
 modifies sql data
 begin
-	declare falloNoExisteJefeAntiguo bool;
-    declare falloNoExisteJefeNuevo bool;
-
-    update emple set oficio = 'EMPLEADO' where emple.apellido = apellidoAntiguo;
+	declare tempNumeroJefe int;
+    declare fallo bool;
     
-    update emple set oficio = 'DIRECTOR' where emple.apellido = apellidoNuevo;
-
-	select concat('El nuevo jefe de ', apellidoAntiguo, ' es ', apellidoNuevo);
-end//
-
+    declare cursor1 cursor for
+		select 
+			e.emp_no 
+		from 
+			emple e
+		where 
+			apellidoJefeACambiar = e.apellido;
+            
+	declare continue handler for 1329 set fallo = 1;
+    set fallo = 0;
+    
+    open cursor1;
+		while1: while fallo = 0 do
+			fetch cursor1 into tempNumeroJefe;
+            
+            if fallo = 1 then
+				select concat("No existe ningún empleado jefe apellidado ", apellidoJefeACambiar) as 'Error Jefe';
+                
+            elseif exists (SELECT apellido FROM emple WHERE apellido=apellidoEmpleado) then
+				update emple set dir = tempNumeroJefe where apellido=apellidoEmpleado;
+				select concat("El nuevo jefe de ", apellidoEmpleado, " es ", apellidoJefeACambiar) as 'Mensaje';
+                leave while1;
+                
+			else
+				select concat("No existe ningún empleado apellidado ", apellidoEmpleado) as 'Error Empleado';
+                leave while1;
+			end if;
+		end while while1;
+    close cursor1;
+end //
+-- Llamada a la función
 delimiter ;
-call cambiarJefe('Hola', 'Adios');
+call cambiarJefe("March", "Martínez"); -- Caso en el que no existe ningún jefe con ése apellido.
+
+call cambiarJefe("MArch", "JIMÉNEZ"); -- Caso en el que sí existe un jefe con ése apellido pero no un empleado.
+
+call cambiarJefe("SÁNCHEZ", "JIMÉNEZ"); -- Caso en el que existen tanto jefe com empleado.
+
     
     
    
