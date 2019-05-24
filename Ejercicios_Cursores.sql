@@ -231,7 +231,27 @@ mostrando la descripción por defecto del error por pantalla, y en su lugar, ter
 normalmente y guarde en una variable de salida estado, un mensaje con el tipo de error
 “Clave duplicada”. Se debe de utilizar un manejador o handler.*/
 
-call insertarPedido('P0005', now()); -- Éste va a dar error
+delimiter //
+drop procedure if exists insertarPedidoModificado //
+create procedure insertarPedidoModificado(refPedido varchar(20), fecha date, inout estado bool)
+modifies sql data
+begin
+    
+    
+    declare continue handler for 1062 set estado = 1;
+    set estado = 0;
+    insert into pedido (refped, fecped) values (refPedido, fecha);
+    
+    if estado = 1 then
+		 select estado as estadoReferencia;
+	else
+		select concat("Pedido ", refPedido," añadido en ésta fecha: ",fecha) as "Resultado";
+	end if;
+end //
+
+delimiter ;
+
+call insertarPedidoModificado('P0005', now(),@estado); -- Éste va a dar error
 
 /*6. Crea un procedimiento llamado insertar que se encargue de llamar a insertarPedido
 y nos informe si la inserción se ha podido llevar a cabo o no. Nos debe de mostrar un
@@ -242,8 +262,11 @@ drop procedure if exists insertar //
 create procedure insertar(refPedido varchar(20), fecha date)
 modifies sql data
 begin
-	
-    call insertarPedido(refPedido, fecha);
+	declare variable bool;
+    call insertarPedidoModificado(refPedido, fecha,variable);
+    if variable = 1 then
+		select concat("ERROR. Ya hay un pedido con la referencia ", refPedido) as "Resultado";
+	end if;
 end //
 -- LLamada al procedimiento
 delimiter ;
@@ -278,7 +301,7 @@ end //
 -- Llamada al procedimiento
 delimiter ;
 call mostrarDescripcion('A0012');
-call mostrarDescripcion('A0013'); -- Éste dará error :D 
+call mostrarDescripcion('A0013'); -- Éste dará error  
 
 /*8. Crea un procedimiento llamado cambiarJefe que cambie el director o jefe de un
 empleado en la tabla emple de la base de datos Empresa.
